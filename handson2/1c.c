@@ -22,23 +22,26 @@
 */
 
 int main(){
-	struct itimerval timer;
-	int opt;
-	printf("Select the interval timer\n1.10sec\n2.10microsec\n");
-	scanf("%d",&opt);
-	if(opt==1){
-		timer.it_interval.tv_sec = 0;
-        	timer.it_interval.tv_usec = 0;
-        	timer.it_value.tv_sec = 10;
-        	timer.it_value.tv_usec = 0;
-	}
-	else if(opt==2){
-		timer.it_interval.tv_sec = 0;
-	        timer.it_interval.tv_usec = 0;
-	        timer.it_value.tv_sec = 0;
-	        timer.it_value.tv_usec = 10;
-	}
-	int timestat=setitimer(ITIMER_PROF, &timer, 0);
-	//sleep(20);
-	return 0;
+        struct itimerval timer;
+        int opt;
+        printf("Select the interval timer\n1.10sec\n2.10microsec\n");
+        scanf("%d",&opt);
+        //opt=1;
+        printf("hi");
+        if(opt==1){
+                timer.it_interval.tv_sec = 0;
+                timer.it_interval.tv_usec = 0;
+                timer.it_value.tv_sec = 10;
+                timer.it_value.tv_usec = 0;
+        }
+        else if(opt==2){
+                timer.it_interval.tv_sec = 0;
+                timer.it_interval.tv_usec = 0;
+                timer.it_value.tv_sec = 0;
+                timer.it_value.tv_usec = 1;
+        }
+        int timestat=setitimer(ITIMER_PROF, &timer, 0);
+        while(1);
+        return 0;
 }
+
