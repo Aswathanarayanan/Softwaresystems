@@ -8,15 +8,15 @@
 #include<stdio.h>
 #include<unistd.h>
 #include<string.h>
-void fun(void* args){
+void fun(){
         printf("thread id:%ld\n",pthread_self());
 }
 int main(){
-        void* val[3];
-        pthread_t mythread;
-        for(int i=1;i<=3;i++){
-                pthread_create(&mythread,NULL,(void*)fun,NULL);
-                //pthread_join(mythread,&val[i]);
+        pthread_t mythread[3];
+        for(int i=0;i<3;i++){
+                pthread_create(&mythread[i],NULL,(void*)fun,NULL);
+                //pthread_join(mythread[i],NULL);
         }
+        pthread_exit(NULL);
         return 0;
 }
