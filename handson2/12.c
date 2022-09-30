@@ -11,15 +11,17 @@
 #include<sys/time.h>
 int main(){
 	if(fork()){
-               printf("parent process%d\n",getpid()); 
+               printf("parent process %d\n",getpid()); 
+	       sleep(10);
         }
         else
         {
                printf("child process %d\n",getpid());
                int ppid=getppid();
 	       printf("parent id:%d\n",ppid);
+	       //sleep(10);
+	       kill(ppid,SIGKILL);
 	       sleep(10);
-	       //kill(getppid(),SIGKILL);
         }
 	return 0;
 }
