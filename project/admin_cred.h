@@ -1,0 +1,6 @@
+#ifndef ADMIN_CREDENTIALS
+#define ADMIN_CREDENTIALS
+
+#define ADMIN_LOGIN_ID "Aswath"
+#define ADMIN_PASSWORD "12345678"
+#endif
