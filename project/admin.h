@@ -12,33 +12,30 @@
 #include <errno.h>
 #include<string.h> 
 
-#include "./customer.h"
-#include "./account.h"
+#include "./customer_struct.h"
+#include "./account_struct.h"
 #include "./admin_cred.h"
 
-bool loginhandler(bool isadmin, int connFD, struct Customer *ptrToCustomerID){
-    if(isadmin){
-        char writebuffer[1000],readbuffer[1000];
-        int r_bytes,w_bytes;
-        //strcpy(writebuffer,);
-        w_bytes=write(connFD,"Enter the Login ID\n",sizeof("Enter the Login ID\n"));
+bool loginadminhandler(int connFD){
+    char writebuffer[1000],readbuffer[1000];
+    int r_bytes,w_bytes;
+    //strcpy(writebuffer,);
+    w_bytes=write(connFD,"Enter the Login ID\n",sizeof("Enter the Login ID\n"));
+    
+    bzero(readbuffer, sizeof(readbuffer));
+    r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
+    //printf("%s",readbuffer);
+
+    if(strcmp(ADMIN_LOGIN_ID,readbuffer)==0){
+        bzero(writebuffer, sizeof(writebuffer));
+        w_bytes=write(connFD,"Enter the Password*\n",sizeof("Enter the Password*\n"));
         
         bzero(readbuffer, sizeof(readbuffer));
         r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
-        printf("%s",readbuffer);
-
-        if(strcmp(ADMIN_LOGIN_ID,readbuffer)==0){
-            bzero(writebuffer, sizeof(writebuffer));
-            w_bytes=write(connFD,"Enter the Password\n",sizeof("Enter the Password\n"));
-            
-            bzero(readbuffer, sizeof(readbuffer));
-            r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
-            printf("%d",r_bytes);
-            if(strcmp(ADMIN_PASSWORD,readbuffer)==0)
-                return true;
-        }
-
-    }
+        printf("%d",r_bytes);
+        if(strcmp(ADMIN_PASSWORD,readbuffer)==0)
+            return true;
+    }    
     return false;
 }
 
@@ -121,7 +118,7 @@ int addcustomer(int connFD,int acc_num){
     sprintf(writebuffer,"%d",newcustomer.id);
     strcat(newcustomer.login,writebuffer);
 
-    w_bytes=write(connFD,"Enter the password\n",sizeof("Enter the password\n"));
+    w_bytes=write(connFD,"Enter the password*\n",sizeof("Enter the password*\n"));
     bzero(readbuffer, sizeof(readbuffer));
     r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
     strcpy(newcustomer.password,readbuffer);///////////////////to hide pass
@@ -250,6 +247,7 @@ bool getaccountdetails(int connFD,struct Account *customeraccount){
      lock.l_type = F_UNLCK;
     fcntl(acc_fd, F_SETLK, &lock);
 
+    //to copy the account details (used in customer file)
     if(customeraccount!=NULL){
         *customeraccount=account;
         return true;
@@ -496,7 +494,7 @@ bool modifycustomerdetails(int connFD){
 bool adminhandler(int connFD){
     char writebuffer[1000],readbuffer[1000];
     int r_bytes,w_bytes;
-    if(loginhandler(true,connFD,NULL)){
+    if(loginadminhandler(connFD)){
         //strcpy(writebuffer,);
         while(1){
             w_bytes=write(connFD,"Login Admin Success!!\n1. Get Customer Details\n2. Get Account Details\n3. Add Account\n4. Delete Account\n5. Modify Customer Information\n6. To exit\nEnter your choice\n",sizeof("Login Admin Success!!\n1. Get Customer Details\n2. Get Account Details\n3. Add Account\n4. Delete Account\n5. Modify Customer Information\n6. To exit\nEnter your choice\n"));

@@ -7,7 +7,8 @@
 
 #include "./admin.h"
 #include "./customer.h"
-#include "./account.h"
+#include "./customer_struct.h"
+#include "./account_struct.h"
 #include "./admin_cred.h"
 
 void connectionhandler(int socketfd){
@@ -30,7 +31,7 @@ void connectionhandler(int socketfd){
 		break;
 	case 2:
 		//w_bytes=write(socketfd,"logged as cus",sizeof("logged as cus"));
-		//customerhandler(socketfd);
+		customerhandler(socketfd);
 	default:
 		w_bytes=write(socketfd,"",sizeof(""));
 		break;

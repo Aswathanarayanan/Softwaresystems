@@ -7,7 +7,8 @@
 
 #include "./admin.h"
 #include "./customer.h"
-#include "./account.h"
+#include "./customer_struct.h"
+#include "./account_struct.h"
 #include "./admin_cred.h"
 
 void connectionhandler(int socketfd){
@@ -17,10 +18,14 @@ void connectionhandler(int socketfd){
 
 		bzero(readbuffer, sizeof(readbuffer));
         bzero(writebuffer, sizeof(writebuffer));
-
+		
 		r_bytes=read(socketfd,readbuffer,sizeof(readbuffer));
-		printf("%s",readbuffer);
-		scanf("%[^\n]%*c",writebuffer);
+		if (strchr(readbuffer,'*') != NULL)
+            strcpy(writebuffer, getpass(readbuffer));
+		else{	
+			printf("%s",readbuffer);
+			scanf("%[^\n]%*c",writebuffer);
+		}
 		//printf("--%s--",writebuffer);
 		w_bytes=write(socketfd,writebuffer,sizeof(writebuffer));
 		//printf("%d",w_bytes);
