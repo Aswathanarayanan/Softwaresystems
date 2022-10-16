@@ -22,8 +22,11 @@ void connectionhandler(int socketfd){
 		r_bytes=read(socketfd,readbuffer,sizeof(readbuffer));
 		if (strchr(readbuffer,'*') != NULL)
             strcpy(writebuffer, getpass(readbuffer));
+		
 		else{	
 			printf("%s",readbuffer);
+			if (strchr(readbuffer,'~') != NULL)
+            	close(socketfd);
 			scanf("%[^\n]%*c",writebuffer);
 		}
 		//printf("--%s--",writebuffer);
@@ -42,7 +45,7 @@ void main()
 	struct sockaddr_in cli;
 	cli.sin_family = AF_INET;
 	cli.sin_addr.s_addr = htonl(INADDR_ANY);
-	cli.sin_port = htons(8080);
+	cli.sin_port = htons(8081);
 	
 	stat = connect(sd,(struct sockaddr *) &cli, sizeof(cli));
 	printf("\nConnection Established");

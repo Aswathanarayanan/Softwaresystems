@@ -132,34 +132,51 @@ bool deposit(int connFD){
         r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
 
         amount=atol(readbuffer);
+        if(account.balance>=0){
+            account.balance+=amount;
 
-        account.balance+=amount;
+            int acc_fd=open("./account.txt",O_WRONLY);
+            off_t offset = lseek(acc_fd, account.accountNumber * sizeof(struct Account), SEEK_SET);
 
-        int acc_fd=open("./account.txt",O_WRONLY);
-        off_t offset = lseek(acc_fd, account.accountNumber * sizeof(struct Account), SEEK_SET);
+            struct flock lock = {F_WRLCK, SEEK_SET, offset, sizeof(struct Account), getpid()};
+            int lockingStatus = fcntl(acc_fd, F_SETLKW, &lock);
 
-        struct flock lock = {F_WRLCK, SEEK_SET, offset, sizeof(struct Account), getpid()};
-        int lockingStatus = fcntl(acc_fd, F_SETLKW, &lock);
+            w_bytes=write(acc_fd,&account,sizeof(account));
 
-        w_bytes=write(acc_fd,&account,sizeof(account));
+            lock.l_type = F_UNLCK;
+            fcntl(acc_fd, F_SETLK, &lock);
+            write(connFD,"Amount deposited..Type \"continue\" \n",sizeof("Amount deposited..Type \"continue\" \n"));
 
-        lock.l_type = F_UNLCK;
-        fcntl(acc_fd, F_SETLK, &lock);
-        write(connFD,"Amount deposited..Type \"continue\" \n",sizeof("Amount deposited..Type \"continue\" \n"));
-
-        bzero(readbuffer,sizeof(readbuffer));
-        r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
+            bzero(readbuffer,sizeof(readbuffer));
+            r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
 
 
-        //unlock cs
-        semOp.sem_op = 1;
-        semop(semIdentifier, &semOp, 1);
+            //unlock cs
+            semOp.sem_op = 1;
+            semop(semIdentifier, &semOp, 1);
+        }
+        else{
+             write(connFD,"Invalid account!! .. Type \"Exit\"\n",sizeof("Invalid account!! .. Type \"Exit\"\n"));
+            bzero(readbuffer,sizeof(readbuffer));
+            r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
+
+            //unlock cs
+            semOp.sem_op = 1;
+            semop(semIdentifier, &semOp, 1);
+
+            return false;
+        }
 
     }
     else{
         write(connFD,"Invalid account!! .. Type \"Exit\"\n",sizeof("Invalid account!! .. Type \"Exit\"\n"));
         bzero(readbuffer,sizeof(readbuffer));
         r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
+
+        //unlock cs
+        semOp.sem_op = 1;
+        semop(semIdentifier, &semOp, 1);
+
         return false;
     }
 
@@ -194,34 +211,50 @@ bool withdraw(int connFD){
         r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
 
         amount=atol(readbuffer);
+        if(amount != 0 && account.balance - amount >= 0){
+            account.balance-=amount;
 
-        account.balance-=amount;
+            int acc_fd=open("./account.txt",O_WRONLY);
+            off_t offset = lseek(acc_fd, account.accountNumber * sizeof(struct Account), SEEK_SET);
 
-        int acc_fd=open("./account.txt",O_WRONLY);
-        off_t offset = lseek(acc_fd, account.accountNumber * sizeof(struct Account), SEEK_SET);
+            struct flock lock = {F_WRLCK, SEEK_SET, offset, sizeof(struct Account), getpid()};
+            int lockingStatus = fcntl(acc_fd, F_SETLKW, &lock);
 
-        struct flock lock = {F_WRLCK, SEEK_SET, offset, sizeof(struct Account), getpid()};
-        int lockingStatus = fcntl(acc_fd, F_SETLKW, &lock);
+            w_bytes=write(acc_fd,&account,sizeof(account));
 
-        w_bytes=write(acc_fd,&account,sizeof(account));
+            lock.l_type = F_UNLCK;
+            fcntl(acc_fd, F_SETLK, &lock);
+            write(connFD,"Amount debited..Type \"continue\" \n",sizeof("Amount debited..Type \"continue\" \n"));
 
-        lock.l_type = F_UNLCK;
-        fcntl(acc_fd, F_SETLK, &lock);
-        write(connFD,"Amount debited..Type \"continue\" \n",sizeof("Amount debited..Type \"continue\" \n"));
-
-        bzero(readbuffer,sizeof(readbuffer));
-        r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
+            bzero(readbuffer,sizeof(readbuffer));
+            r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
 
 
-        //unlock cs
-        semOp.sem_op = 1;
-        semop(semIdentifier, &semOp, 1);
-
+            //unlock cs
+            semOp.sem_op = 1;
+            semop(semIdentifier, &semOp, 1);
+        }
+        else{
+            write(connFD,"Insufficient balance .. Type \"continue\"\n",sizeof("Insufficient balance .. Type \"continue\"\n"));
+            bzero(readbuffer,sizeof(readbuffer));
+            r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
+            
+            //unlock cs
+            semOp.sem_op = 1;
+            semop(semIdentifier, &semOp, 1);
+            
+            return false;
+        }
     }
     else{
         write(connFD,"Invalid account!! .. Type \"Exit\"\n",sizeof("Invalid account!! .. Type \"Exit\"\n"));
         bzero(readbuffer,sizeof(readbuffer));
         r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
+
+        //unlock cs
+        semOp.sem_op = 1;
+        semop(semIdentifier, &semOp, 1);
+
         return false;
     }
 
@@ -374,12 +407,16 @@ bool customerhandler(int connFD){
                 changepassword(connFD);
                 break;
             default:
+                w_bytes=write(connFD,"Exiting\n~",sizeof("Exiting\n~"));
                 break;
             }
         }
     }
     else{
-        w_bytes=write(connFD,"Invalid credentials..type \"Exit\"\n",sizeof("Invalid credentials..type \"Exit\" \n"));
+        w_bytes=write(connFD,"Invalid credentials..type \"Exit\"\n~",sizeof("Invalid credentials..type \"Exit\"\n~"));
+        bzero(readbuffer,sizeof(readbuffer));
+        r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
+        return false;
     }
 }
 

@@ -229,8 +229,12 @@ bool getaccountdetails(int connFD,struct Account *customeraccount){
         return false;
     }
     int offset = lseek(acc_fd, accountnum * sizeof(struct Account), SEEK_SET);
-    if (offset == -1 && errno == EINVAL){
-        w_bytes=write(connFD,"Account number doesnt exists,..Type\"Exit\"\n",sizeof("Account number doesnt exists,..Type\"Exit\"\n"));
+    FILE* fp = fopen("./account.txt", "r");
+    fseek(fp, 0L, SEEK_END);
+    long int res = ftell(fp);
+    fclose(fp);
+    if ((offset == -1 && errno == EINVAL) || res<offset){
+        w_bytes=write(connFD,"Account number doesnt exists,.. Type\"continue\"\n",sizeof("Account number doesnt exists,.. Type\"continue\"\n"));
         bzero(readbuffer,sizeof(readbuffer));
         r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
         return false;
@@ -289,15 +293,19 @@ bool getcustomerdetails(int connFD,int customerid){
     cus_fd=open("./customer.txt",O_RDONLY);
 
     if(cus_fd==-1){
-        w_bytes=write(connFD,"Customer doesnt exists,..Type \"Exit\" \n",sizeof("Customer doesnt exists,..Type \"Exit\" \n"));
+        w_bytes=write(connFD,"Customer doesnt exists,..Type \"Continue\" \n",sizeof("Customer doesnt exists,..Type \"Continue\" \n"));
         bzero(readbuffer,sizeof(readbuffer));
         r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
         return false;
     }
-    int offset = lseek(cus_fd, customerid * sizeof(struct Customer), SEEK_SET);
-    if (errno == EINVAL)
+    off_t offset = lseek(cus_fd, customerid * sizeof(struct Customer), SEEK_SET);
+    FILE* fp = fopen("./customer.txt", "r");
+    fseek(fp, 0L, SEEK_END);
+    long int res = ftell(fp);
+    fclose(fp);
+    if (offset == -1 || res<offset)
     {
-        w_bytes=write(connFD,"Customer doesnt exists,..Type\"Exit\"\n",sizeof("Customer doesnt exists,..Type\"Exit\"\n"));
+        w_bytes=write(connFD,"Customer doesnt exists,..Type \"Continue\"\n",sizeof("Customer doesnt exists,.. Type\"Continue\"\n"));
         bzero(readbuffer,sizeof(readbuffer));
         r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
         return false;
@@ -337,14 +345,18 @@ bool deleteaccount(int connFD){
 
     int acc_fd=open("./account.txt",O_RDONLY);
     if(acc_fd==-1){
-        w_bytes=write(connFD,"Error in openning account file,..Type\"Exit\"\n",sizeof("Error in openning account file,..Type\"Exit\"\n"));
+        w_bytes=write(connFD,"Error in openning account file,..Type \"Continue\"\n",sizeof("Error in openning account file,..Type \"Continue\"\n"));
         bzero(readbuffer,sizeof(readbuffer));
         r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
         return false;
     }
     int offset = lseek(acc_fd, accnum * sizeof(struct Account), SEEK_SET);
-    if (offset == -1 && errno == EINVAL){
-        w_bytes=write(connFD,"Account number doesnt exists,..Type\"Exit\"\n",sizeof("Account number doesnt exists,..Type\"Exit\"\n"));
+    FILE* fp = fopen("./account.txt", "r");
+    fseek(fp, 0L, SEEK_END);
+    long int res = ftell(fp);
+    fclose(fp);
+    if ((offset == -1 && errno == EINVAL) || res<offset){
+        w_bytes=write(connFD,"Account number doesnt exists,..Type \"Continue\"\n",sizeof("Account number doesnt exists,.. Type\"Continue\"\n"));
         bzero(readbuffer,sizeof(readbuffer));
         r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
         return false;
@@ -377,7 +389,11 @@ bool deleteaccount(int connFD){
             perror("Error obtaining write lock on the Account file!");
             return false;
         }
-        w_bytes=write(acc_fd,NULL,0);
+
+        account.owners[0]=-1;
+        account.owners[1]=-1;
+        account.balance=-1;
+        w_bytes=write(acc_fd,&account,sizeof(account));
         lock.l_type = F_UNLCK;
         fcntl(acc_fd, F_SETLK, &lock);
 
@@ -387,6 +403,9 @@ bool deleteaccount(int connFD){
     else{
         bzero(writebuffer,sizeof(writebuffer));
         w_bytes=write(connFD,"Account cannot be deleted..type \"continue\" \n",sizeof("Account cannot be deleted..type \"continue\" \n"));
+        bzero(readbuffer,sizeof(readbuffer));
+        r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
+        return false;
     }
 
     bzero(readbuffer,sizeof(readbuffer));
@@ -411,10 +430,24 @@ bool modifycustomerdetails(int connFD){
 
     int cus_fd=open("./customer.txt",O_RDONLY);
     if(cus_fd==-1){
-        w_bytes=write(connFD,"Customer doesnt exists,..Type \"Exit\" \n",sizeof("Customer doesnt exists,..Type \"Exit\" \n"));
+        w_bytes=write(connFD,"Customer doesnt exists,..Type \"Continue\" \n",sizeof("Customer doesnt exists,..Type \"Continue\" \n"));
         bzero(readbuffer,sizeof(readbuffer));
         r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
-         bzero(readbuffer,sizeof(readbuffer));
+        return false;
+    }
+
+    
+    offset = lseek(cus_fd, cusid * sizeof(struct Customer), SEEK_SET);
+
+    FILE* fp = fopen("./customer.txt", "r");
+    fseek(fp, 0L, SEEK_END);
+    long int res = ftell(fp);
+    fclose(fp);
+
+    if (offset == -1 || res<offset)
+    {
+        w_bytes=write(connFD,"Customer doesnt exists,..Type \"Continue\"\n",sizeof("Customer doesnt exists,.. Type\"Continue\"\n"));
+        bzero(readbuffer,sizeof(readbuffer));
         r_bytes=read(connFD,readbuffer,sizeof(readbuffer));
         return false;
     }
@@ -521,14 +554,17 @@ bool adminhandler(int connFD){
                     modifycustomerdetails(connFD);
                     break;
                 default:
-                    //writeBytes = write(connFD, ADMIN_LOGOUT, strlen(ADMIN_LOGOUT));
+                    w_bytes = write(connFD, "Exiting~", strlen("Exiting~"));
                     return false;
             }
+            // if(!res)
+            //     close(connFD);
         }
 
     }
     else{
-        w_bytes=write(connFD,"Invalid credentials",sizeof("Invalid credentials"));
+        w_bytes=write(connFD,"Invalid credentials..\"exiting\"\n~",sizeof("Invalid credentials..\"exiting\"\n~"));
+        //close(connFD);
     }
     return true;
 }
